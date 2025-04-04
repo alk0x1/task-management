@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { TaskList } from '../components/tasks/TaskList';
 import { TaskFilter, TasksResponse, TaskStatus, TaskPriority } from '../types/index';
 import { taskService } from '../services/task.service';
+import { useNotification } from '../contexts/NotificationContext';
 
 export function TasksPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +20,7 @@ export function TasksPage() {
   });
   
   const navigate = useNavigate();
+  const { refreshNotifications } = useNotification();
 
   useEffect(() => {
     loadTasks();
@@ -58,6 +60,7 @@ export function TasksPage() {
       try {
         await taskService.delete(id);
         loadTasks();
+        await refreshNotifications();
       } catch (error) {
         console.error('Erro ao excluir tarefa:', error);
       }

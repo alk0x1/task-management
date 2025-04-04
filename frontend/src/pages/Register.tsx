@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { AxiosError } from 'axios'; // Added this import
+import { AxiosError } from 'axios';
 
 interface ApiErrorResponse {
   message: string;

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Task, TaskPriority, TaskStatus } from '../../types/index';
 import dayjs from 'dayjs';
+import { useNotification } from '../../contexts/NotificationContext';
 
 interface TaskListProps {
   tasks: Task[];
@@ -8,6 +9,8 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, onDelete }: TaskListProps) {
+  const { refreshNotifications } = useNotification();
+
   const getStatusBadgeClass = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.PENDING:
@@ -39,6 +42,13 @@ export function TaskList({ tasks, onDelete }: TaskListProps) {
   const formatDueDate = (dueDate: string | undefined) => {
     if (!dueDate) return 'Sem prazo';
     return dayjs(dueDate).format('DD/MM/YYYY');
+  };
+
+  const handleDelete = async (id: string) => {
+    if (onDelete) {
+      await onDelete(id);
+      await refreshNotifications();
+    }
   };
 
   return (
@@ -81,7 +91,7 @@ export function TaskList({ tasks, onDelete }: TaskListProps) {
                 {onDelete && (
                   <div className="mt-2 flex justify-end">
                     <button
-                      onClick={() => onDelete(task.id)}
+                      onClick={() => handleDelete(task.id)}
                       className="text-xs text-red-600 hover:text-red-900"
                     >
                       Excluir

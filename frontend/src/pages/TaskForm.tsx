@@ -10,6 +10,9 @@ import { taskService } from '../services/task.service';
 import { TaskPriority, TaskStatus } from '../types/index';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { useNotification } from '../contexts/NotificationContext';
 
 interface ApiErrorResponse {
   message: string;
@@ -29,18 +32,39 @@ type TaskFormData = z.infer<typeof taskSchema>;
 export function TaskForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { refreshNotifications } = useNotification();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isEditing = !!id;
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<TaskFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       status: TaskStatus.PENDING,
       priority: TaskPriority.MEDIUM
     }
   });
+
+  const dueDate = watch('dueDate');
+  
+  const formatDateForStorage = (dateStr: string): string => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    
+    const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    
+    return date.toISOString();
+  };
+
+  const parseDate = (dateString: string | undefined): Date | null => {
+    if (!dateString) return null;
+    
+    const [year, month, day] = dateString.split('-').map(Number);
+    
+    const date = new Date(year, month - 1, day);
+    
+    return date;
+  };
 
   useEffect(() => {
     if (isEditing) {
@@ -52,6 +76,7 @@ export function TaskForm() {
     try {
       setInitialLoading(true);
       const task = await taskService.getById(id as string);
+      
       reset({
         ...task,
         dueDate: task.dueDate ? dayjs(task.dueDate).format('YYYY-MM-DD') : undefined
@@ -69,11 +94,18 @@ export function TaskForm() {
       setLoading(true);
       setError(null);
       
+      const formattedData = {
+        ...data,
+        dueDate: data.dueDate ? formatDateForStorage(data.dueDate) : undefined
+      };
+      
       if (isEditing) {
-        await taskService.update(id as string, data);
+        await taskService.update(id as string, formattedData);
       } else {
-        await taskService.create(data);
+        await taskService.create(formattedData);
       }
+      
+      await refreshNotifications();
       
       navigate('/tasks');
     } catch (err: unknown) {
@@ -145,13 +177,33 @@ export function TaskForm() {
               {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>}
             </div>
             
-            <Input
-              id="dueDate"
-              type="date"
-              label="Data de Vencimento"
-              error={errors.dueDate?.message}
-              {...register('dueDate')}
-            />
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="dueDate">
+                Data de Vencimento
+              </label>
+              <div className={`w-full border ${
+                errors.dueDate ? 'border-red-500' : 'border-gray-300'
+              } rounded-md shadow-sm focus-within:outline-none focus-within:ring-blue-500 focus-within:border-blue-500`}>
+              <DatePicker
+                id="dueDate"
+                selected={dueDate ? parseDate(dueDate) : null}
+                onChange={(date: Date | null) => {
+                  if (date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    setValue('dueDate', `${year}-${month}-${day}`);
+                  } else {
+                    setValue('dueDate', undefined);
+                  }
+                }}
+                dateFormat="dd/MM/yyyy"
+                className="w-full px-3 py-2 focus:outline-none"
+                placeholderText="DD/MM/YYYY"
+              />
+              </div>
+              {errors.dueDate && <p className="mt-1 text-sm text-red-600">{errors.dueDate.message}</p>}
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
