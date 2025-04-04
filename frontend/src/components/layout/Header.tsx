@@ -50,12 +50,6 @@ export function Header() {
                   )}
                 </Link>
                 <span className="text-sm text-gray-700">Olá, {user?.name}</span>
-                <Link
-                  to="/profile"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                >
-                  Perfil
-                </Link>
                 <button
                   onClick={logout}
                   className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
