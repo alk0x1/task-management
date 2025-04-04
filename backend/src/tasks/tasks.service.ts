@@ -9,9 +9,15 @@ export class TasksService {
   constructor(private prisma: PrismaService) {}
 
   async create(createTaskDto: CreateTaskDto, userId: string) {
+    let formattedData = { ...createTaskDto };
+    
+    if (formattedData.dueDate) {
+      formattedData.dueDate = new Date(formattedData.dueDate);
+    }
+
     return await this.prisma.task.create({
       data: {
-        ...createTaskDto,
+        ...formattedData,
         user: {
           connect: { id: userId }
         }
@@ -88,6 +94,10 @@ export class TasksService {
 
   async update(id: string, updateTaskDto: UpdateTaskDto) {
     try {
+      if (updateTaskDto.dueDate) {
+        updateTaskDto.dueDate = new Date(updateTaskDto.dueDate);
+      }
+      
       return await this.prisma.task.update({
         where: { id },
         data: updateTaskDto,
